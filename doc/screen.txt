@@ -1,0 +1,40 @@
+Notes sur le fonctionnement de l'écran
+
+
+bios.c:bios_init
+	screen_init_mode
+		a2560_bios_screen_init
+			vicky2_init
+			a2560_sfb_init
+			a2560_irq_set_handler(VBL)
+			
+  init_video_ram
+	  if CONF_VRAM_ADDRESS
+	  - set screen_start from fixed values
+		else
+		- compute vram_size, screen_start using calc_vram_size, balloc_stram
+    - set screen_start (maybe using balloc)
+    - set v_bas_ad
+    screen_setphys
+			a2560_setphys
+			  vicky2_set_bitmap_address			
+
+	screen_init_services
+
+
+
+screen.c
+	- setscreen
+
+
+screen.c:
+
+	setscreen
+		screen_setphys
+		a2560_bios_set_rez
+
+
+screen_init_mode
+	
+
+init_video_ram

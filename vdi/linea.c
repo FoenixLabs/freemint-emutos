@@ -1,0 +1,98 @@
+/*
+ * linea.c - line A graphics initialization
+ *
+ * Copyright (C) 2001-2022 by Authors:
+ *
+ * Authors:
+ *  MAD  Martin Doering
+ *  VB   Vincent Barrilliot
+ *
+ * This file is distributed under the GPL, version 2 or at your
+ * option any later version.  See doc/license.txt for details.
+ */
+
+ /* #define ENABLE_KDEBUG */
+
+#include "emutos.h"
+#include "intmath.h"
+#include "linea.h"
+#include "lineavars.h"
+#include "tosvars.h"
+#include "a2560_bios.h"
+
+
+/* Scales block number according to the number of bitplanes, used to speedup get_start_addr
+ * v_planes==8 (used by both Falcon & TT) has a shift value of 0
+ * v_planes==16 indicates Falcon 16-bit mode which does not use bit planes, so we also set v_planes_shift to 0
+ *             (it should not be accessed) */
+UBYTE v_planes_shift;
+
+
+/* Code to call when the Line A is notified of resolution change. */
+void (*linea_on_resolution_changed)(void);
+
+
+/*
+ * linea_init - init linea variables
+ */
+void linea_init(UWORD planes, UWORD xrez, UWORD yrez)
+{
+    KDEBUG(("linea_init(%d, %d, %d)\n", v_planes, xrez, yrez));
+
+    v_planes = planes;
+    V_REZ_HZ = xrez;
+    V_REZ_VT = yrez;
+    linea_resolution_changed();
+}
+
+
+void linea_resolution_changed(void)
+{
+    KDEBUG(("linea_resolution_changed v_bas_ad:%p\n", v_bas_ad));
+
+#if CONF_WITH_CHUNKY8
+# if defined(MACHINE_A2560K) || defined(MACHINE_A2560X) || defined(MACHINE_GENX)
+    /*
+     * These machines normally use chunky 8bpp framebuffers, but the TOS-graph
+     * bring-up path uses a packed 1bpp framebuffer on VICKY B.
+     */
+    if (v_planes == 1)
+        BYTES_LIN = v_lin_wr = V_REZ_HZ / 8;
+    else
+# endif
+    BYTES_LIN = v_lin_wr = V_REZ_HZ; /* 1 byte per pixel makes it easy */
+# if (defined(MACHINE_A2560U) || defined(MACHINE_A2560K) || defined(MACHINE_A2560X) || defined(MACHINE_GENX)) && CONF_WITH_A2560_SHADOW_FRAMEBUFFER
+    a2560_bios_sfb_setup(v_bas_ad, v_cel_ht);
+# endif
+#else
+    BYTES_LIN = v_lin_wr = V_REZ_HZ / 8 * v_planes;
+#endif
+    
+    linea_max_x = V_REZ_HZ - 1;
+    linea_max_y = V_REZ_VT - 1;
+
+    /* Precalculate shift value to optimize pixel address calculations */
+    static const UBYTE shift_offset[5] = {0, 3, 2, 0, 1};
+    /* Helps speed up get_start_addr */
+    v_planes_shift = (v_planes > 4) ? 0 : shift_offset[v_planes];
+
+    if (linea_on_resolution_changed)
+        linea_on_resolution_changed();
+
+    mouse_display_driver.resolution_changed();
+}
+
+
+/*
+ * validate colour index
+ *
+ * checks the supplied colour index and, if valid, returns it;
+ * otherwise returns 1 (which by default maps to black)
+ */
+WORD linea_validate_color_index(WORD colnum)
+{
+    if ((colnum < 0) || (colnum >= numcolors))
+        return 1;
+
+    return colnum;
+}

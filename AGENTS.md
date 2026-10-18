@@ -6,11 +6,12 @@ Upstream EmuTOS docs live in `doc/`. Foenix port notes: `readme.md`, `doc/genxto
 
 ## Hardware (A2560Me)
 
-- CPU: 68EC060 @ 50 MHz. Build with `-m68060 -mshort -msoft-float`. There is no FPU; omitting `-msoft-float` makes interrupt handlers save FPU registers and crash.
+- CPU: 68LC/EC060 @ 66.67 MHz. Build with `-m68060 -mshort -msoft-float`. There is no FPU; omitting `-msoft-float` makes interrupt handlers save FPU registers and crash.
 - SRAM: 8 MB (`SRAM_TOP` `0x00800000`). TOS-style 1bpp video RAM sits in SRAM at `0x00700000` (1 MB).
+- DDR: 1008 MiB alternate RAM at 0x00800000..0x3F7FFFFF; top 8 MiB reserved at 0x3F800000 for fVDI.
 - Chipset: GAVIN `0xFEC00000`, SuperIO `0xFEC02000`, VICKY2 (legacy text) `0xFEC80000`, VICKY3 (DDR3 bitmap) `0xFC000000`.
-- I/O: PS/2 keyboard/mouse, RTC (BQ4802LY), UART 16550 (debug on COM3), SD/MMC. IDE is off on this target.
-- Storage: Atari-partitioned media, FAT12/FAT16 only. Prepare images with Hatari.
+- I/O: PS/2 keyboard/mouse, RTC (BQ4802LY), UART 16550 (debug on COM3), SD/MMC. mSATA IDE is enabled on this target.
+- Storage: MBR FAT16 C: through EmuTOS; FAT32 D: through FreeMiNT. Preserve the validated disk layout.
 
 `CPUFLAGS = -m68060` for A2560M/K/X. A2560U is 68000 @ 20 MHz and a different memory map (`foenix/foenix.h`).
 
@@ -40,11 +41,11 @@ Link address is `ROM_ORIGIN` in `emutos.ld`. Rebuild after changing it.
 
 | Mode | `ROM_ORIGIN` | Upload |
 |------|----------------|--------|
-| RAM (dev, current default) | `0x00100000` | `./upload-to-mem.sh` |
-| Flash (A2560M/X/K/GenX) | `0xffc00000` (FLASH0) | `./upload-to-flash.sh` |
+| RAM (development) | `0x00100000` | `./upload-to-mem.sh` |
+| Flash (A2560Me default) | `0xffd00000` (block 2, 512k layout) | `./upload-to-flash.sh` |
 | Flash (A2560U) | `0x00f00000` | `./upload-to-flash.sh` |
 
-Scripts use FoenixMgr as `fm.sh --port /dev/ttyUSB1`. RAM load also uploads `tools/ldemutos.s28` so the reset vector points at `0x100000`.
+Scripts use vendor tools/a2560me_dbg.py with debug protocol v2 on /dev/ttyUSB1. The integration repository owns deployment, drive templates, FreeMiNT/fVDI builds and packaging. Firmware helpers here are tools/a2560me/.
 
 ## Layout
 
@@ -69,7 +70,7 @@ Foenix code is gated with `MACHINE_A2560M` / `MACHINE_FOENIX` (the latter is def
 
 - Defaults: `include/config.h`. New options must be `#ifndef`-guarded so `localconf.h` can override.
 - Non-overridable system defines: `include/sysconf.h`.
-- A2560M block (~line 840 of `config.h`): no Atari hardware, SD on / IDE off, EmuCON on, AES off, debug via `FOENIX_COM3_DEBUG_PRINT`.
+- A2560M block (~line 840 of `config.h`): no Atari hardware, SD on / IDE on, EmuCON on, AES off, debug via `FOENIX_COM3_DEBUG_PRINT`.
 - At least one of `CONF_WITH_A2560_TEXT_MODE` and `CONF_WITH_A2560_SHADOW_FRAMEBUFFER` is required for a usable console; both are currently 0 on A2560M (1bpp TOS graph / VICKY3 path instead).
 - `CONF_ATARI_HARDWARE` is 0. Do not re-enable Atari-only drivers (MFP, IKBD ACIA, shifter, ACSI, …) on this target.
 
@@ -98,7 +99,7 @@ Follow `doc/coding.txt`. Match the file you edit.
 - Keyboard is **PS/2 scancodes** (Linux-style, `foenix/ps2_scancodes.h`), not Atari IKBD. Layout tables: `bios/keyb_*.h`.
 - Do not use `STOP` (`USE_STOP_INSN_TO_FREE_HOST_CPU` is forced off; it crashes).
 - Empty delay loops need `DONT_OPTIMIZE_OUT` (`foenix/regutils.h`).
-- VDI graphics are not done: Atari VDI expects a readable shifter framebuffer.
+- Monochrome recovery uses EmuTOS VDI. Colour graphics are implemented in the separate fVDI submodule, including CPU caching and VDMA.
 
 ## Debug
 

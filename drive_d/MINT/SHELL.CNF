@@ -1,6 +1,0 @@
-# Main FreeMiNT configuration on the FAT32 partition.
-echo A2560Me: D: FAT32 configuration loaded successfully
-setenv HOSTNAME a2560me
-setenv HOME u:/d/mint
-# No XaAES, fVDI, XDD or XFS modules for this first monochrome test.
-# FAT32 and the console shell are built into MINT060.PRG.

@@ -31,17 +31,17 @@ cleanup() {
 }
 trap cleanup EXIT
 make clean > logs/fvdi/sram-clean.log 2>&1
-make UNIQUE=us a2560m -j4 CC="$root/tools/fvdi/cc.py" \
+make UNIQUE=us a2560m -j4 "$@" CC="$root/tools/fvdi/cc.py" \
     A2560M_DEFS=-DCONF_WITH_A2560M_DDR=0 > logs/fvdi/sram-build.log 2>&1
 cp emutos-a2560m.rom logs/fvdi/emutos-sram.rom
 make clean > logs/fvdi/ram-clean.log 2>&1
-make UNIQUE=us a2560m -j4 CC="$root/tools/fvdi/cc.py" \
+make UNIQUE=us a2560m -j4 "$@" CC="$root/tools/fvdi/cc.py" \
     A2560M_DEFS=-DA2560M_RAM_IMAGE > logs/fvdi/ram-build.log 2>&1
 cp emutos-a2560m.rom logs/fvdi/emutos-ram.rom
 cp emutos.map logs/fvdi/emutos-ram.map
 python3 "$script_dir/ram-image.py" logs/fvdi/emutos-ram.rom logs/fvdi/emutos-ddr-ram.srec
 make clean > logs/fvdi/flash-clean.log 2>&1
-make UNIQUE=us a2560m -j4 CC="$root/tools/fvdi/cc.py" \
+make UNIQUE=us a2560m -j4 "$@" CC="$root/tools/fvdi/cc.py" \
     A2560M_DEFS= > logs/fvdi/flash-build.log 2>&1
 cp logs/fvdi/emutos-sram.rom emutos-a2560m-sram.rom
 cp logs/fvdi/emutos-ram.rom emutos-a2560m-ram.rom

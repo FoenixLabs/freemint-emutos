@@ -31,7 +31,13 @@ OUTPUT_FORMAT(binary)
     # define ROM_ORIGIN 0x00100000
     // Use the below instead, if building EmuTOS for going to the flash1 bank
     //# define ROM_ORIGIN 0x00f00000
-#elif defined(MACHINE_A2560K) || defined(MACHINE_A2560M) || defined(MACHINE_A2560X) || defined(MACHINE_GENX)
+#elif defined(MACHINE_A2560M)
+# ifdef A2560M_RAM_IMAGE
+#  define ROM_ORIGIN 0x00100000 /* temporary debug-port RAM boot */
+# else
+#  define ROM_ORIGIN 0xffd00000 /* A2560Me flash, offset 0x00100000 */
+# endif
+#elif defined(MACHINE_A2560K) || defined(MACHINE_A2560X) || defined(MACHINE_GENX)
     // Use this for debug purposes (load OS to user ram)
     # define ROM_ORIGIN 0x00100000
     // Use the below instead, if building EmuTOS for going to the flash

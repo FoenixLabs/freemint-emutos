@@ -11,7 +11,7 @@
 
 
 /* IDE support */
-#if defined(MACHINE_A2560U) || defined(MACHINE_A2560K) || defined(MACHINE_A2560X) || defined(MACHINE_GENX)
+#if defined(MACHINE_A2560U) || defined(MACHINE_A2560K) || defined(MACHINE_A2560M) || defined(MACHINE_A2560X) || defined(MACHINE_GENX)
 
 struct IDE
 {   
@@ -30,7 +30,9 @@ struct IDE
     uint8_t filler0d[1];
     uint8_t command; /* Read: status */
     uint8_t filler0f[1];
+#if !defined(MACHINE_A2560M)
     uint8_t control;  /* Read: Alternate status */
+#endif
 };
 #define ide_interface ((volatile struct IDE* const)IDE_BASE)
 #endif

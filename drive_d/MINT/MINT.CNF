@@ -1,0 +1,9 @@
+# A2560Me RGB565 GUI startup; requires DDR-aware EmuTOS firmware.
+# MONO.CNF restores the validated monochrome desktop.
+setenv HOSTNAME a2560me
+setenv HOME u:/d/desktop
+setenv LANG en
+# fVDI reads FVDI.SYS from its current directory, then falls back to C:/.
+cd u:/d/mint/fvdi
+exec u:/d/mint/fvdi/fvdi.prg
+GEM=u:/d/mint/xaaes/xaloader.prg u:/d/mint/xaaes/xaaes020.km

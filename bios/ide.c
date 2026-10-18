@@ -116,13 +116,20 @@ struct IDE
     { i->sector_number = a; i->sector_count = b; }
 #define IDE_WRITE_CYLINDER_HIGH_CYLINDER_LOW(i,a) \
     { i->cylinder_high = HIBYTE(a); i->cylinder_low = LOBYTE(a); }
+#if defined(MACHINE_A2560M)
+/* MCP selects the primary device with bits 7 and 5 set. */
+#define IDE_WRITE_COMMAND_HEAD(i,a,b) \
+    { i->head = (b) | 0xa0; i->command = a; }
+#define IDE_WRITE_HEAD(i,a)       i->head = (a) | 0xa0
+#else
 #define IDE_WRITE_COMMAND_HEAD(i,a,b) \
     { i->head = b; i->command = a; }
 #define IDE_WRITE_CONTROL(i,a)    i->control = a
 #define IDE_WRITE_HEAD(i,a)       i->head = a
+#endif
 
 #define IDE_READ_STATUS(i)        i->command
-#if defined(MACHINE_A2560U) || defined(MACHINE_A2560K) || defined(MACHINE_A2560X) || defined(MACHINE_GENX)
+#if defined(MACHINE_A2560U) || defined(MACHINE_A2560K) || defined(MACHINE_A2560M) || defined(MACHINE_A2560X) || defined(MACHINE_GENX)
     /* There seem to be a problem with IDE_READ_ALT_STATUS which makes really slow. Since we don't use
     * interrupts, we can use the "real" status register, which works fine.
     * This problem is known to exist on the U but hasn't been tried on the X, so we're just conservative here.
@@ -140,7 +147,8 @@ struct IDE
 #endif /* MACHINE_M548X */
 
 /* the data register is naturally byteswapped on some hardware */
-#if defined(MACHINE_AMIGA)
+/* GAVIN preserves sector byte order, reversing ATA numeric words. */
+#if defined(MACHINE_AMIGA) || defined(MACHINE_A2560M)
 #define IDE_DATA_REGISTER_IS_BYTESWAPPED TRUE
 #else
 #define IDE_DATA_REGISTER_IS_BYTESWAPPED FALSE
@@ -387,7 +395,9 @@ static int ide_select_device(volatile struct IDE *interface,UWORD dev);
 static void set_chs_mode(WORD dev,struct IDENTIFY *identify);
 static void set_multiple_mode(WORD dev,UWORD multi_io);
 static void set_lba48_mode(WORD dev, UWORD lba48);
+#if !defined(MACHINE_A2560M)
 static UWORD get_start_count(volatile struct IDE *interface);
+#endif
 static void set_start_count(volatile struct IDE *interface,UBYTE sector,UBYTE count);
 static int wait_for_not_BSY(volatile struct IDE *interface,LONG timeout);
 
@@ -571,7 +581,7 @@ BOOL detect_ide(void)
 
 #ifdef MACHINE_AMIGA
     has_ide = has_gayle ? 0x01 : 0x00;
-#elif defined(MACHINE_A2560U) || defined(MACHINE_A2560K) || defined(MACHINE_A2560X) || defined(MACHINE_GENX)
+#elif defined(MACHINE_A2560U) || defined(MACHINE_A2560K) || defined(MACHINE_A2560M) || defined(MACHINE_A2560X) || defined(MACHINE_GENX)
     has_ide = 0x01;
 #elif defined(MACHINE_M548X)
     has_ide = 0x01;
@@ -671,6 +681,9 @@ static UWORD ide_device_type(WORD dev)
     WORD ifnum;
     UWORD type;
 
+    if ((dev < 0) || (dev >= 2 * NUM_IDE_INTERFACES))
+        return DEVTYPE_NONE;
+
     ifnum = dev / 2;/* i.e. primary IDE, secondary IDE, ... */
     dev &= 1;       /* 0 or 1 */
 
@@ -703,6 +716,7 @@ static int wait_for_not_BSY_and_DRDY(volatile struct IDE *interface,LONG timeout
     return 1;
 }
 
+#if !defined(MACHINE_A2560M)
 static void ide_reset(UWORD ifnum)
 {
     struct IFINFO *info = ifinfo + ifnum;
@@ -737,11 +751,42 @@ static UBYTE ide_decode_type(UBYTE status,UWORD signature)
 
     return DEVTYPE_UNKNOWN;
 }
+#endif
 
 static void ide_detect_devices(UWORD ifnum)
 {
     volatile struct IDE *interface = ifinfo[ifnum].base_address;
     struct IFINFO *info = ifinfo + ifnum;
+#if defined(MACHINE_A2560M)
+    /* MCP exposes only the primary ATA device and no control register.
+     * Follow pata_init(), then require a successful IDENTIFY before exposing
+     * the device.  Do not use the other Foenix targets' signature workaround.
+     */
+    memset(info->dev,0,sizeof(info->dev));
+    interface->command = IDE_CMD_NOP; /* MCP's PATA_CMD_INIT */
+    if (wait_for_not_BSY(interface,LONG_TIMEOUT)) {
+        KINFO(("A2560Me mSATA: initialization timeout\n"));
+        return;
+    }
+
+    IDE_WRITE_HEAD(interface,0);
+    interface->sector_count = 1;
+    interface->sector_number = 0;
+    interface->cylinder_low = 0;
+    interface->cylinder_high = 0;
+    if (wait_for_not_BSY_and_DRDY(interface,LONG_TIMEOUT)) {
+        KINFO(("A2560Me mSATA: no ready device\n"));
+        return;
+    }
+
+    info->dev[0].type = DEVTYPE_ATA;
+    if (ata_identify(ifnum * 2) < 0) {
+        info->dev[0].type = DEVTYPE_NONE;
+        KINFO(("A2560Me mSATA: IDENTIFY failed\n"));
+    } else {
+        KINFO(("A2560Me mSATA: ATA device detected\n"));
+    }
+#else
     UBYTE status;
     UWORD signature;
     int i;
@@ -804,6 +849,7 @@ static void ide_detect_devices(UWORD ifnum)
 
     for (i = 0; i < 2; i++)
         KDEBUG(("IDE i/f %d device %d is type %d\n",ifnum,i,info->dev[i].type));
+#endif
 }
 
 /*
@@ -867,11 +913,13 @@ static int ide_select_device(volatile struct IDE *interface,UWORD dev)
 /*
  * get sector number / sector count IDE registers
  */
+#if !defined(MACHINE_A2560M)
 static UWORD get_start_count(volatile struct IDE *interface)
 {
     wait_for_not_BSY_not_DRQ(interface,SHORT_TIMEOUT);
     return IDE_READ_SECTOR_NUMBER_SECTOR_COUNT(interface);
 }
+#endif
 
 /*
  * set sector number / sector count IDE registers
@@ -1379,6 +1427,17 @@ LONG ide_rw(WORD rw,ULONG sector,UWORD count,UBYTE *buf,WORD dev,BOOL need_bytes
     ifnum = dev / 2;/* i.e. primary IDE, secondary IDE, ... */
     dev &= 1;       /* 0 or 1 */
 
+#if defined(MACHINE_A2560M)
+    /* Use MCP's single-sector PIO commands while validating this bridge. */
+    maxsecs_per_io = 1;
+    if (count && ((ULONG)(count - 1) > 0xffffffffUL - sector))
+        return ESECNF;
+    if (!(ifinfo[ifnum].dev[dev].options & LBA48_ACTIVE)
+     && count && ((sector > 0x0fffffffUL)
+               || ((ULONG)(count - 1) > 0x0fffffffUL - sector)))
+        return ESECNF;
+#endif
+
     rw &= RW_RW;    /* we just care about read or write for now */
 
     /*
@@ -1501,6 +1560,11 @@ static WORD clear_multiple_mode(UWORD ifnum,UWORD dev)
 
 static void set_multiple_mode(WORD dev,UWORD multi_io)
 {
+#if defined(MACHINE_A2560M)
+    /* MCP uses READ/WRITE SECTOR, not READ/WRITE MULTIPLE. */
+    MAYBE_UNUSED(dev);
+    MAYBE_UNUSED(multi_io);
+#else
     UWORD ifnum;
     UBYTE spi;
 
@@ -1521,6 +1585,7 @@ static void set_multiple_mode(WORD dev,UWORD multi_io)
 
     ifinfo[ifnum].dev[dev].options |= MULTIPLE_MODE_ACTIVE;
     ifinfo[ifnum].dev[dev].spi = spi;
+#endif
 }
 
 static LONG ata_identify(WORD dev)
@@ -1538,6 +1603,14 @@ static LONG ata_identify(WORD dev)
         ret = ide_read(IDE_CMD_IDENTIFY_DEVICE,ifnum,ifdev,0L,1,(UBYTE *)&identify,
                        ifinfo[ifnum].twisted_cable != IDE_DATA_REGISTER_IS_BYTESWAPPED);
     } else ret = EUNDEV;
+
+#if defined(MACHINE_A2560M)
+    /* The SATA bridge uses LBA commands.  Never fall back to CHS using
+     * absent or invalid geometry from an unsupported IDENTIFY response.
+     */
+    if ((ret == E_OK) && !(identify.capabilities & LBA_SUPPORTED))
+        ret = EGENRL;
+#endif
 
     if (ret < 0)
         KDEBUG(("ata_identify(%d [ifnum=%d ifdev=%d]) ret=%ld\n", dev, ifnum, ifdev, ret));

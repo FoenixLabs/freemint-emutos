@@ -84,7 +84,9 @@ void init_system_timer(void)
 #elif CONF_WITH_MFP
     /* Timer C: ctrl = divide 64, data = 192 */
     xbtimer(2, 0x50, 192, (LONG)int_timerc);
-#elif defined(MACHINE_A2560U) || defined(MACHINE_A2560K) || defined(MACHINE_A2560M) || defined(MACHINE_A2560X) || defined(MACHINE_GENX)
+#elif defined(MACHINE_A2560M)
+    a2560_set_timer(HZ200_TIMER_NUMBER, 200, true, a2560_int_5ms);
+#elif defined(MACHINE_A2560U) || defined(MACHINE_A2560K) || defined(MACHINE_A2560X) || defined(MACHINE_GENX)
     a2560_set_timer(HZ200_TIMER_NUMBER, 200, true, int_timerc);
 #endif
 

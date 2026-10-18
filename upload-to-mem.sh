@@ -1,9 +1,9 @@
 #!/bin/sh
-COM=/dev/ttyUSB0
-#FNXMGR="python3 $FOENIXMGR/FoenixMgr/fnxmgr.py --port $COM"
-FNXMGR="fnxmgr --port $COM"
-ROM=`ls emutos-a2560?.rom`
-echo "Uploading $ROM to memory through port $COM"
-#ldemutos.s28 is a simple program that sets the reset vector to 0x100000. There
-#are probably other/better ways of doing that.
-$FNXMGR --upload-srec tools/ldemutos.s28 ; $FNXMGR --binary $ROM --address 0x100000
+# A2560Me temporary RAM boot using the vendor's verified debug protocol.
+# The flash is unchanged. Build with tools/fvdi/build-firmware.sh first.
+set -eu
+image=${1:-emutos-a2560m-ram.rom}
+mkdir -p logs/fvdi
+python3 tools/fvdi/ram-image.py "$image" logs/fvdi/emutos-ddr-ram.srec
+python3 tools/a2560me_dbg.py --port /dev/ttyUSB1 \
+    --run logs/fvdi/emutos-ddr-ram.srec --reset-first

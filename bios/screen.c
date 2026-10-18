@@ -136,6 +136,11 @@ static void setup_video_ram(void)
 #elif defined(MACHINE_A2560M)
     vram_size = calc_vram_size();
     vram_address = (UBYTE *)VSRAM_BANK0;
+    /* Unlike Gen1 VRAM, this framebuffer occupies CPU SRAM.  Reserve
+     * the fixed framebuffer and everything above it from GEMDOS. */
+    if ((memtop < vram_address) || (memtop - vram_address < vram_size))
+        panic("A2560Me: framebuffer outside available SRAM\n");
+    balloc_stram(memtop - vram_address, TRUE);
 #elif CONF_VRAM_ADDRESS
     vram_size = VIDEO_RAM_SIZE_UNSPECIFIED;
     vram_address = (UBYTE *)CONF_VRAM_ADDRESS;
@@ -403,4 +408,3 @@ void vsync(void)
     set_sr(old_sr);
 #endif /* CONF_WITH_ATARI_VIDEO */
 }
-

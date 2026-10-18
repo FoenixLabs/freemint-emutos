@@ -1,0 +1,23 @@
+A2560Me FreeMiNT + accelerated RGB565 GUI package
+FreeMiNT revision: 4ef482b68318c9741b512eec2a05349fff6eb716
+MiNTLib headers revision: 660081d0937299e2e76f9705148019d972d8b46f
+Kernel: 68060, soft-float C, MMU support disabled, built-in shell.
+OLDTOSFS enabled: C: uses EmuTOS GEMDOS, D: uses native FreeMiNT FAT32.
+Firmware: 512 KiB flash image at 0xFFD00000, jump vector 0xFFD00008.
+Firmware includes PS/2 Atari scan codes, KBDVBASE keyboard-vector dispatch,
+and GAVIN timer dispatch through the replaceable _5MS vector.
+User reports shell/keyboard/C:/D: file-persistence validation passed.
+GUI: XaAES + MOOSE.ADI built for soft-float 68060; TeraDesk 4.08.
+See D:/MINT/SOURCE/GUI.TXT for GUI revisions and binary provenance.
+User validated the monochrome XaAES/TeraDesk desktop.
+DDR-aware firmware passed a physical RAM boot: FastTotal 1,031,632 kB.
+Top 8 MiB DDR reserved for fVDI at 0x3F800000.
+RGB565 fVDI cache/VDMA diagnostic, mouse/redraw and Video Options passed.
+User reports responsive window dragging without corruption.
+DDR-aware FLASH programming/readback and normal colour boot passed.
+Default D:/MINT/MINT.CNF enables colour; MONO.CNF is recovery.
+Half-resolution switching and long stress tests remain unvalidated.
+
+SHA256 (firmware file remains in the Linux workspace):
+4a827c1e013be36a850355355a7f6e74d8e15f8fb53c5a0cccd8b3c05be54653  emutos-a2560m.rom
+0e8b0f124c62bfea82ab138897e2e1ea5d168243c80beb80925734fcbd6c7db0  AUTO/MINT060.PRG

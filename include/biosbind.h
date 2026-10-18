@@ -30,7 +30,11 @@
 #define Kbshift(a) bios_l_w(0xb,a)
 /* GenX TOS extensions, to avoid the use of system variables */
 #define Bgettpa() bios_l_w(0xc,a)
+#if defined(MACHINE_A2560M)
+#define Balloc(top,size) ((void *)bios_l_lw(0xd,size,top))
+#else
 #define Balloc(a,b) bios_l_lw(0xd,a,b)
+#endif
 #define Bdrvrem() bios_l_v(0xe)
 
 

@@ -1,5 +1,7 @@
 /* Controller of the A2560's SD Card */
 
+#include "emutos.h"
+
 #if defined(MACHINE_A2560K) || defined(MACHINE_A2560M) || defined(MACHINE_A2560X) || defined(MACHINE_GENX)
 
 #include <stdint.h>
@@ -27,7 +29,9 @@ typedef struct {
 } SD;
 
 static void SD_Wait_SDx_Busy(const SD *sd) {
-	while (*sd->ctrl & SDx_BUSY);
+    /* MCP performs an initial status read before polling for completion. */
+    (void)*sd->ctrl;
+    while (*sd->ctrl & SDx_BUSY);
 }
 
 uint8_t recvbuf[1024];
@@ -84,6 +88,7 @@ static int SD_wait_ready(const SD *sd) {
 static void spi_cs_unassert(const SD *sd) {
 //    a2560_debugnl("spi_cs_unassert");
     *sd->ctrl &= ~SDx_CS; // SDx_CS = 0 ( Disabled ), SDx = 1 (Active)
+    spi_recv_byte(sd); /* MCP clocks one byte with CS high to release DO. */
 }
 
 /*-----------------------------------------------------------------------*/
@@ -92,6 +97,7 @@ static void spi_cs_unassert(const SD *sd) {
 static void spi_cs_assert(const SD *sd) {
     //a2560_debugnl("spi_cs_assert");
     *sd->ctrl |= SDx_CS; // SDx_CS = 0 ( Disabled ), SDx = 1 (Active)
+    spi_recv_byte(sd); /* Allow the card to enable DO before testing ready. */
     SD_wait_ready(sd);
 	return;
 }

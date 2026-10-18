@@ -68,8 +68,11 @@ void delay_init(void)
 #elif defined(MACHINE_A2560U)
     /* The A2560U's 68EC000 is running at 20MHz while LOOPS_68000 is for 16MHz*/
     loopcount_1_msec = LOOPS_68000 * 5L / 4;
-#elif defined(MACHINE_A2560M) || defined(MACHINE_A2560K) || defined(MACHINE_A2560X)
-    /* The A2560M 68xx060 is running at 33MHz, LOOPS_68060 assumes 110Mhz */
+#elif defined(MACHINE_A2560M)
+    /* Scale from the 110MHz reference without overflowing a 32-bit ULONG. */
+    loopcount_1_msec = (LOOPS_68060 / 110) * (CPU_FREQ / 1000) / 1000;
+#elif defined(MACHINE_A2560K) || defined(MACHINE_A2560X)
+    /* The A2560K/X 68xx060 is running at 33MHz, LOOPS_68060 assumes 110Mhz */
     loopcount_1_msec = LOOPS_68060 * 33L / 110;
 #else
 # if CONF_WITH_APOLLO_68080

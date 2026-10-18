@@ -838,6 +838,13 @@
  * Defaults for the A2560M from Foenix Retro Systems
  */
 #ifdef MACHINE_A2560M
+/* Register DDR3 as Alt-RAM, excluding the fVDI video reservation. */
+# ifndef CONF_WITH_A2560M_DDR
+#  define CONF_WITH_A2560M_DDR 1
+# endif
+# ifndef CONF_WITH_A2560_NULL_TRAP
+#  define CONF_WITH_A2560_NULL_TRAP 1 /* Diagnostic: trap execution at address zero */
+# endif
 # ifndef MACHINE_A2560_DEBUG
 #  define MACHINE_A2560_DEBUG 1
 # endif
@@ -851,7 +858,7 @@
 #  define CONF_ATARI_HARDWARE 0
 # endif
 # ifndef CONF_WITH_IDE
-#  define CONF_WITH_IDE 0
+#  define CONF_WITH_IDE 1 /* A2560Me mSATA via the GAVIN ATA interface */
 # endif
 # ifndef CONF_WITH_SDMMC
 #  define CONF_WITH_SDMMC 1
@@ -895,10 +902,9 @@
 # ifndef ALWAYS_SHOW_INITINFO
 #  define ALWAYS_SHOW_INITINFO 1 /* So we can get into EmuCON */
 # endif
-# ifdef USE_STOP_INSN_TO_FREE_HOST_CPU /* To confirm: this causes a crash so we don't want it */
-#  undef USE_STOP_INSN_TO_FREE_HOST_CPU
-#  define USE_STOP_INSN_TO_FREE_HOST_CPU 0
-# endif
+/* Define this even when unset, before the generic default enables STOP. */
+# undef USE_STOP_INSN_TO_FREE_HOST_CPU
+# define USE_STOP_INSN_TO_FREE_HOST_CPU 0
 #ifdef DEFAULT_BAUDRATE
 #  undef DEFAULT_BAUDRATE
 #  define DEFAULT_BAUDRATE 12 /*38400*/
@@ -1226,6 +1232,10 @@
 /*
  * Set CONF_WITH_ALT_RAM to 1 to add support for alternate RAM
  */
+#ifndef CONF_WITH_A2560M_DDR
+# define CONF_WITH_A2560M_DDR 0
+#endif
+
 #ifndef CONF_WITH_ALT_RAM
 # define CONF_WITH_ALT_RAM 1
 #endif

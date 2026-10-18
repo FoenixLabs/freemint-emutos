@@ -1273,7 +1273,13 @@ WORD hndl_msg(void)
         menu = TRUE;
         if (handle)
         {
+#if defined(MACHINE_A2560M)
+            kprintf("A2560Me redraw: begin handle=%d\n",handle);
+#endif
             do_wredraw(handle, (GRECT *)&G.g_rmsg[4]);
+#if defined(MACHINE_A2560M)
+            kprintf("A2560Me redraw: complete handle=%d\n",handle);
+#endif
         }
         break;
     case WM_TOPPED:
@@ -1318,7 +1324,14 @@ WORD hndl_msg(void)
             break;
         rc_copy((GRECT *)&G.g_rmsg[4], &gr);
         do_xyfix(&gr.g_x, &gr.g_y);
+#if defined(MACHINE_A2560M)
+        kprintf("A2560Me window: message=%d handle=%d x=%d y=%d w=%d h=%d\n",
+                G.g_rmsg[0],handle,gr.g_x,gr.g_y,gr.g_w,gr.g_h);
+#endif
         wind_set_grect(handle, WF_CXYWH, &gr);
+#if defined(MACHINE_A2560M)
+        kprintf("A2560Me window: wind_set returned\n");
+#endif
         if (G.g_rmsg[0] == WM_SIZED)
         {
             cols = pw->w_pncol;

@@ -1,3 +1,11 @@
+## A2560Me accelerated desktop release
+
+The current A2560Me profile uses the DDR-aware ROM at `0xFFD00000` and
+FreeMiNT/fVDI/XaAES/TeraDesk with CPU caching and VDMA. `./compile.sh`
+builds the recorded flash, RAM-test and SRAM-recovery ROM profiles.
+See [release installation and rebuild instructions](tools/release/README.TXT).
+Build a shareable ROM/drive/source bundle with `python3 tools/release/package.py`.
+
 This is a fork of the EmuTOS operating system, aiming at providing an OS to the Foenix Retro Systems computers' A2560 and Genx with m68k CPU. It has some refinements in compared to the official EmuTOS, which where introduced to make it cooler on the STe, and also easier to port on other platforms.
 It's build using Vincent Rivière's GCC 4.6.4 m68k-atari-mint compiler: http://vincent.riviere.free.fr/soft/m68k-atari-mint/
 

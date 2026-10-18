@@ -537,6 +537,16 @@ void dopanic(const char *fmt, ...)
                  s->sr, (ULONG)s->pc);
     }
 #endif
+#if defined(MACHINE_A2560M)
+    /* Read only aligned CPU SRAM, never a bogus PC or an I/O address.
+     * Heap addresses have no linker symbols; their bytes help distinguish
+     * accidentally executed data from dynamically loaded instructions. */
+    if (pc && !IS_ODD_POINTER(pc) && ((ULONG)pc <= SRAM_TOP - 16UL))
+    {
+        kcprintf("SRAM at PC: %04x %04x %04x %04x %04x %04x %04x %04x\n",
+                 pc[0], pc[1], pc[2], pc[3], pc[4], pc[5], pc[6], pc[7]);
+    }
+#endif
 #if DISPLAY_INSTRUCTION_AT_PC
     /*
      * we optionally display the instruction pointed to by the PC.
@@ -570,7 +580,7 @@ void dopanic(const char *fmt, ...)
     kcprintf(" USP:%s%08lx\n\n",
              start,proc_usp);
 
-#if DISPLAY_STACK
+#if DISPLAY_STACK || defined(MACHINE_A2560M)
     kcprintf("Stack: %04x %04x %04x %04x\n",
              proc_stk[0], proc_stk[1], proc_stk[2], proc_stk[3]);
     kcprintf("       %04x %04x %04x %04x\n",
@@ -579,6 +589,7 @@ void dopanic(const char *fmt, ...)
              proc_stk[8], proc_stk[9], proc_stk[10], proc_stk[11]);
     kcprintf("       %04x %04x %04x %04x\n\n",
              proc_stk[12], proc_stk[13], proc_stk[14], proc_stk[15]);
+#if DISPLAY_STACK
     if (!(sr & 0x2000) && ((proc_usp & 1) == 0))
     {
         const UWORD *user_stk = (const UWORD *)proc_usp;
@@ -591,6 +602,7 @@ void dopanic(const char *fmt, ...)
         kcprintf("       %04x %04x %04x %04x\n\n",
                  user_stk[12], user_stk[13], user_stk[14], user_stk[15]);
     }
+#endif
 #endif
 
     if (wrap)

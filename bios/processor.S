@@ -159,7 +159,11 @@ exit:
  * On a 68030/68882 tandem it does.
  */
 _detect_fpu:
-#if CONF_WITH_ADVANCED_CPU
+#if defined(MACHINE_A2560M)
+        // A2560Me target uses an LC/EC060 without an FPU.  Do not probe it
+        // with floating-point instructions or clear the PCR disable bit.
+        moveq   #0,d0
+#elif CONF_WITH_ADVANCED_CPU
         movem.l d2/a2,-(sp)
         move.l  sp,a0           // save the ssp
         moveq   #0,d0           // assume no FPU

@@ -130,6 +130,20 @@ _int_acia:
 #endif /* CONF_WITH_IKBD_ACIA || CONF_WITH_MIDI_ACIA */
 
 
+#ifdef MACHINE_A2560M
+        .globl  _call_kbdvec
+/* Kbdvbase()-4 takes the scan byte in d0 and the keyboard IOREC in a0.
+ * Save the C callee-saved registers around arbitrary replacement vectors. */
+_call_kbdvec:
+        move.w  4(sp),d0
+        lea     _ikbdiorec,a0
+        move.l  _kbdvec,a1
+        movem.l d2-d7/a2-a6,-(sp)
+        jsr     (a1)
+        movem.l (sp)+,d2-d7/a2-a6
+        rts
+#endif
+
 _call_kbdint: // call the C routine in keyboard.c to do the work.
         move.w  d0,-(sp)
         jsr     _kbd_int

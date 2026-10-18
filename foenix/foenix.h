@@ -42,7 +42,11 @@
   #define VRAM0_SIZE      0x00200000 /* 2MB */
 
 #elif defined(MACHINE_A2560X) || defined(MACHINE_GENX) || defined(MACHINE_A2560K) || defined(MACHINE_A2560M)
+#ifdef MACHINE_A2560M
+  #define CPU_FREQ        66666667   /* Build 83: 1200MHz / 18, CPU and bus 1:1 */
+#else
   #define CPU_FREQ        33333333   /* 33Mhz : TODO get rid of this and use cpu_freq */
+#endif
   #define GAVIN           0xFEC00000
   #define BEATRIX         0xFEC20000
   #define SUPERIO_BASE    0xFEC02000
@@ -300,9 +304,9 @@
   #define INT_DMA_CH6         0x16    /* DMA Channel 6 */
   #define INT_DMA_CH7         0x17    /* DMA Channel 7 */
   #define INT_SDCARD_INSERT   0x18
-  #define INT_TIMER0          0x19    /* Timer 0, Clocked with the CPU Clock (Local BUS @ 33Mhz)*/
-  #define INT_TIMER1          0x1A    /* Timer 1, Clocked with the CPU Clock (Local BUS @ 33Mhz)*/
-  #define INT_TIMER2          0x1B    /* Timer 2, Clocked with the CPU Clock (Local BUS @ 33Mhz)*/
+  #define INT_TIMER0          0x19    /* Timer 0, Clocked with the CPU bus (66.67MHz on A2560Me)*/
+  #define INT_TIMER1          0x1A    /* Timer 1, Clocked with the CPU bus (66.67MHz on A2560Me)*/
+  #define INT_TIMER2          0x1B    /* Timer 2, Clocked with the CPU bus (66.67MHz on A2560Me)*/
   #define INT_TIMER3          0x1C    /* Timer 3, Clocked with the SOF - 60Hz in the case of the A2560Me */
   #define INT_VIA0            0x1D    /*  VIA0 (FA2560K2) - No Used in A2560Me - Reserved */
   #define INT_VIA1            0x1E    /*  VIA1 (FA2560K2) - No Used in A2560Me - Reserved */

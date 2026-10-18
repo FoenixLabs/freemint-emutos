@@ -26,6 +26,11 @@
 #include "../bdos/bdosstub.h"
 #include "amiga.h"
 #include "string.h"
+#if defined(MACHINE_A2560M) && CONF_WITH_A2560M_DDR
+#include <stdint.h>
+#include "../foenix/a2560me_memory.h"
+#include "../foenix/regutils.h"
+#endif
 
 #define ZONECOUNT   32      /* for memory test */
 
@@ -123,6 +128,52 @@ void ttram_detect(void)
 
 #if CONF_WITH_ALT_RAM
 
+#if defined(MACHINE_A2560M) && CONF_WITH_A2560M_DDR
+/* Check the two ends without leaving test patterns in memory. The fixed
+ * hardware map has no holes. Keep the framebuffer out of GEMDOS entirely. */
+static void a2560me_add_ddr(void)
+{
+    volatile ULONG *first = (volatile ULONG *)A2560ME_DDR_BASE;
+    volatile ULONG *last = (volatile ULONG *)(A2560ME_VIDEO_BASE - 4);
+    ULONG saved_first, saved_last;
+    BOOL valid;
+
+    /* Mixed-size accesses must share the normal big-endian byte lanes. */
+    if (R32(0xfec00000UL) & 0x40UL)
+    {
+        KDEBUG(("DDR3 disabled: GAVIN endian inversion is set\n"));
+        return;
+    }
+#if CONF_WITH_BUS_ERROR
+    if (!check_read_byte((LONG)first) || !check_read_byte((LONG)last))
+        return;
+#endif
+    saved_first = *first;
+    saved_last = *last;
+    *first = 0x55aa1234UL;
+    *last = 0xaa55fedcUL;
+    flush_data_cache((void *)first, 4);
+    flush_data_cache((void *)last, 4);
+    invalidate_data_cache((void *)first, 4);
+    invalidate_data_cache((void *)last, 4);
+    valid = (*first == 0x55aa1234UL) && (*last == 0xaa55fedcUL);
+    *first = saved_first;
+    *last = saved_last;
+    flush_data_cache((void *)first, 4);
+    flush_data_cache((void *)last, 4);
+    if (valid)
+    {
+        if (xmaddalt((UBYTE *)A2560ME_DDR_BASE, A2560ME_ALT_SIZE) != 0)
+            return;
+        cookie_add(A2560ME_VIDEO_COOKIE, A2560ME_VIDEO_BASE);
+        KDEBUG(("DDR3: %lu bytes Alt-RAM; framebuffer at 0x%08lx\n",
+            A2560ME_ALT_SIZE, A2560ME_VIDEO_BASE));
+    }
+    else
+        KDEBUG(("DDR3 boundary test failed; Alt-RAM not registered\n"));
+}
+#endif
+
 /* Initialize all Alt-RAM */
 void altram_init(void)
 {
@@ -131,6 +182,10 @@ void altram_init(void)
         (UBYTE *)STATIC_ALT_RAM_ADDRESS, STATIC_ALT_RAM_SIZE));
     xmaddalt((UBYTE *)STATIC_ALT_RAM_ADDRESS, STATIC_ALT_RAM_SIZE);
     return;
+#endif
+
+#if defined(MACHINE_A2560M) && CONF_WITH_A2560M_DDR
+    a2560me_add_ddr();
 #endif
 
 #if CONF_WITH_TTRAM

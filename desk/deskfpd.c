@@ -17,7 +17,9 @@
 *       -------------------------------------------------------------
 */
 
-/* #define ENABLE_KDEBUG */
+#if defined(MACHINE_A2560M)
+#define ENABLE_KDEBUG
+#endif
 
 #include "emutos.h"
 #include "obdefs.h"
@@ -248,6 +250,8 @@ WORD pn_active(PNODE *pn, BOOL include_folders)
     dtasave = dos_gdta();           /* so we can preserve it */
     dos_sdta(&G.g_wdta);
 
+    KDEBUG(("pn_active: path=%s attr=%02x\n",pn->p_spec,pn->p_attr));
+
 #if CONF_WITH_FILEMASK
     strcpy(search, pn->p_spec);
     /*
@@ -278,6 +282,9 @@ WORD pn_active(PNODE *pn, BOOL include_folders)
     pn->p_count = count;        /* & update pathnode */
     pn->p_size = size;
 
+    KDEBUG(("pn_active: search ended rc=%d files=%d bytes=%ld\n",
+            ret,count,size));
+
     if (count == 0)
     {
         fl_free(pn);            /* free any existing filenodes */
@@ -293,6 +300,8 @@ WORD pn_active(PNODE *pn, BOOL include_folders)
         KDEBUG(("Not enough FNODEs for folder %s\n",pn->p_spec));
 
     dos_sdta(dtasave);          /* restore original DTA for neatness */
+
+    KDEBUG(("pn_active: complete files=%d\n",pn->p_count));
 
     return ((ret==ENMFIL) || (ret==EFILNF)) ? 0 : ret;
 }

@@ -1,0 +1,48 @@
+A2560Me accelerated RGB565 GUI package
+======================================
+
+XaAES/loader/MOOSE.ADI: FreeMiNT 4ef482b68318c9741b512eec2a05349fff6eb716
+https://github.com/freemint/freemint
+GEMLib: 68f94dabdffbcd7dc1bda762dc97bdccf1ad9488
+https://github.com/freemint/gemlib
+TeraDesk 4.08: 8035b6e157bd34cb2bd72a26473990c7711501de
+https://github.com/freemint/teradesk
+fVDI: 2d51380bfa177c6f60565e6e246c4881ce9eaacb
+https://github.com/freemint/fvdi
+
+All C uses 68060 soft-float. AES and driver interfaces use short ints;
+fVDI engine and rebuilt desktop use their native 32-bit int ABI. No FPU,
+STOP or LPSTOP instructions occur in the checked executable objects.
+The kernel has MMU protection disabled; this is required by the initial
+Foenix fVDI TTR mappings. Only MOOSE.ADI is installed, not MOOSE_W/XDD.
+
+Default startup loads fVDI from D:/MINT/FVDI, then XaAES and TeraDesk.
+SCREENDEV=1 opens the current screen workstation. The driver uses RGB565
+DDR, CPU write-through caching and VDMA copies/solid fills. ROM fonts are
+reused. No GDOS, external fonts, gradients or textures are required.
+MONO.CNF retains the original EmuTOS monochrome recovery desktop.
+
+Build tools/freemint/build-gui.sh for AES/desktop, then tools/fvdi/build.sh
+for the engine/driver/diagnostics. build-gui.sh builds the custom desktop
+with tools/fvdi/build-desktop.sh and TERAVID.PAT, preserving Video Options.
+Do not replace DESKTOP.PRG with the stock archive binary after building.
+
+Offline GUIBUILD.SH rebuilds AES modules and calls TDBUILD.SH for the
+Foenix-aware desktop. Archives MINTSRC, LIBSRC, GEMSRC, TERASRC and patches
+BOARD.DIF / TERAVID.PAT are included. FVBUILD.SH with FVDISRC.TGZ rebuilds
+fVDI and the driver. See FVDI.TXT for the diagnostic compile/link flags.
+TDBUILD.SH also works independently. Standard cross GCC/binutils, GNU make,
+Python 3, native GCC, flex, bison and Perl are needed.
+
+Original official TeraDesk binary archive retained as TERABIN.ZIP:
+https://atari.joska.no/snapshots/teradesk/teradesk-4.08-8035b6e1.zip
+SHA256 288d2c961be3fa512ae89c09a02bcab9448a2cdb0a0d5213f95494f743c0ca4c
+Resources/notices are extracted from this archive; the executable is
+rebuilt with the matching source and Foenix patch. All source archives
+retain their licenses. Desktop license: D:/DESKTOP/COPYING.
+
+Physical validation passed on 2026-10-17: monochrome and colour desktop,
+DDR test, cached DMA copy/fill/readback/overlap, mouse/redraw and responsive
+dragging without observed corruption. Video Options lists valid Foenix
+modes. Main ROM flash/readback and normal colour boot also passed.
+Half-mode switching and long-duration stress tests remain unvalidated.

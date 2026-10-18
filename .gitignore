@@ -40,3 +40,32 @@ logo_compressor
 
 # GCC dependency files
 *.d
+
+# Hardware debug logs
+/logs/
+
+# Generated FreeMiNT build and copy-ready binary/source artifacts
+/.freemint-build/
+/drive_c/AUTO/MINT060.PRG
+/drive_d/MINT/SOURCE/
+
+# Generated XaAES / TeraDesk executables, resources and upstream notices
+/drive_d/MINT/XAAES/*.KM
+/drive_d/MINT/XAAES/*.ADI
+/drive_d/MINT/XAAES/*.PRG
+/drive_d/MINT/XAAES/*.RSC
+/drive_d/DESKTOP/DESKTOP.PRG
+/drive_d/DESKTOP/*.RSC
+/drive_d/DESKTOP/COPYING
+/drive_d/DESKTOP/UPSTREAM.TXT
+/drive_d/DESKTOP/TERADESK.HYP
+/drive_d/DESKTOP/TERADESK.REF
+
+# Generated A2560Me fVDI and diagnostics
+/drive_d/MINT/FVDI/*.PRG
+/drive_d/MINT/FVDI/*.TOS
+/drive_d/MINT/FVDI/A2560ME.SYS
+/emutos-a2560m-sram.rom
+
+# Generated shareable release archives
+/releases/

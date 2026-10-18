@@ -256,14 +256,46 @@ void a2560_bios_xbtimer(uint16_t timer, uint16_t control, uint16_t data, void *v
 #include "../foenix/trap_bindings.h"
 static void ps2_to_ikbd_packet_adapter(int8_t *packet);
 
+#ifdef MACHINE_A2560M
+/* Convert the HAL's PC key numbers before invoking the replaceable TOS vector.
+ * FreeMiNT installs its keyboard handler here rather than in kbd_int(). */
+static void ps2_to_ikbd_key_adapter(uint8_t scancode)
+{
+    static const UBYTE extended[64] = {
+        /* 40 */ 0x40,0x41,0x42,0x43,0x44,0,0,0x67,
+        /* 48 */ 0x68,0x69,0x4a,0x6a,0x6b,0x6c,0x4e,0x6d,
+        /* 50 */ 0x6e,0x6f,0x70,0x71,0,0,0x60,0x62,
+        /* 58 */ 0x61,0,0,0,0,0,0,0,
+        /* 60 */ 0x72,0x1d,0x65,0,0x38,0,0x47,0x48,
+        /* 68 */ 0x49,0x4b,0x4d,0x4f,0x50,0x51,0x52,0x53,
+        /* 70 */ 0,0,0,0,0,0,0,0,
+        /* 78 */ 0,0,0,0,0,0,0,0
+    };
+    UBYTE key = scancode & 0x7f;
+
+    if (key >= 0x40)
+        key = extended[key - 0x40];
+    else if (key == 0x37)
+        key = 0x66;              /* numeric keypad '*' */
+    if (key)
+        call_kbdvec(key | (scancode & 0x80));
+}
+#endif
+
+
 void a2560_bios_kbd_init(void)
 {
     /* We're using the VBL counter: that may depend on the resolution, if it changes,
      * and of the VBLs are blocked, the counter will not work. But after init, when everything
      * is setup and we're only reacting to interupts, it shouldn't matter. */
     fnx_kbd_init((uint32_t*)&frclock, 60);
+#ifdef MACHINE_A2560M
+    fnx_ps2_set_key_up_handler(ps2_to_ikbd_key_adapter);
+    fnx_ps2_set_key_down_handler(ps2_to_ikbd_key_adapter);
+#else
     fnx_ps2_set_key_up_handler(kbd_int);
     fnx_ps2_set_key_down_handler(kbd_int);
+#endif
     fnx_ps2_set_mouse_handler(ps2_to_ikbd_packet_adapter);
 }
 

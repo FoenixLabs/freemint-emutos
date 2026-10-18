@@ -1,0 +1,7 @@
+# A2560Me monochrome XaAES + TeraDesk startup.
+echo A2560Me: starting XaAES and TeraDesk in the existing video mode
+setenv HOSTNAME a2560me
+setenv HOME u:/d/desktop
+setenv LANG en
+# Pass the full module path: the loader otherwise searches C:'s sysdir.
+GEM=u:/d/mint/xaaes/xaloader.prg u:/d/mint/xaaes/xaaes020.km

@@ -202,7 +202,11 @@ static const uint32_t foenix_cpu_speed_hz[] =
     33000000,
     40000000,
     50000000,
+#ifdef MACHINE_A2560M
+    CPU_FREQ, /* Speed ID 6: build 83 uses 1200MHz / 18, not exactly 66MHz. */
+#else
     66000000,
+#endif
     80000000
 };
 
@@ -228,7 +232,7 @@ static const char* foenix_model_name[FOENIX_MODEL_NAME_SIZE] =
 static const char * foenix_cpu_name[FOENIX_CPU_NAME_SIZE] =
 {
     "MC68SEC000",
-    "MC68020"
+    "MC68020",
     "MC68EC020",
     "MC68030",
     "MC68EC30",
@@ -244,7 +248,7 @@ static const char * foenix_cpu_name[FOENIX_CPU_NAME_SIZE] =
 };
 
 /* 
-CPU_SPEED_ID 	= 4'b0011,	// 3  = 33Mhz
+CPU_SPEED_ID 	= 4'b0110,	// 6  = 66.67MHz (A2560Me build 83)
 MACHINE_ID   	= 4'b1100,	// 12 = A2560M
 CPU_ID       	= 4'b1011; 	// 11 = CPU_MC68LC060
  { CHIP_SUBVERSION[15:0], CPU_ID ,4'b0000, CPU_SPEED_ID , MACHINE_ID };
@@ -310,11 +314,11 @@ void a2560_system_info(struct foenix_system_info_t *result)
         result->cpu_speed_hz = foenix_cpu_speed_hz[1];
     }
 
-#if 0 /* To produce EmuTOS "advertisement builds" while FPGA is not finished */
-    result->cpu_name = "MC68LC060";
-    result->cpu_speed_hz = 33333333;
-    result->model_name = "A2560M FOENIX";
-#endif
+//#if defined(MACHINE_A2560M)
+//    /* Use the compile-time CPU clock so the banner matches timer programming. */
+//    result->cpu_speed_hz = CPU_FREQ;
+//#endif
+
 }
 
 

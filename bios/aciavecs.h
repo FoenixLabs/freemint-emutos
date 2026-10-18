@@ -10,6 +10,9 @@ extern void (*kbdvec)(UBYTE data, IOREC *iorec_a0); /* KBD Input, TOS >= 2.0, mu
 
 /* the following is in aciavecs.S */
 void call_mousevec(SBYTE *packet);
+#ifdef MACHINE_A2560M
+void call_kbdvec(UBYTE scancode);
+#endif
 #ifdef MACHINE_AMIGA
 void call_joyvec(UBYTE *packet);
 #endif

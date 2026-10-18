@@ -28,11 +28,26 @@
 #define REAL_TIMER_C_HANDLER (CONF_WITH_MFP && !CONF_COLDFIRE_TIMER_C)
 
 
+#ifdef MACHINE_A2560M
+        .globl  _a2560_int_5ms
+/* Keep the hardware entry fixed while allowing _5MS cookie clients (MiNT)
+ * to replace vector_5ms. Tail-dispatch without changing registers or the
+ * exception frame: the final chained handler still returns with RTE. */
+_a2560_int_5ms:
+        move.l  _vector_5ms,-(sp)
+        rts
+#endif
+
 // ==== Timer C interrupt handler ============================================
 _int_timerc:
         addq.l  #1, _hz_200.w           // increment 200 Hz counter
 
 #if defined(MACHINE_A2560M)
+        // AES timer callbacks use a small private stack.  Unlike Atari's
+        // level-6 timer, our level-3 timer can be preempted by the level-5
+        // PS/2 handler, whose call chain would overlap the AES mouse stack.
+        // Keep callbacks non-preemptible; RTE restores the interrupted SR.
+        move.w  #0x2700,sr
         move.w  #0x0800,IRQ_PENDING_GRP1  // adjust this for HZ200_TIMER_NUMBER to acknowledge the correct GAVIN Timer interrupt
 #elif defined(MACHINE_A2560U) || defined(MACHINE_A2560X) || defined(MACHINE_A2560K) || defined(MACHINE_GENX)
         move.w  #0x0400,IRQ_PENDING_GRP1  // adjust this for HZ200_TIMER_NUMBER to acknowledge the correct GAVIN Timer interrupt

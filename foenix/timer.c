@@ -189,7 +189,7 @@ uint32_t a2560_delay_calibrate(uint32_t calibration_time)
     loop_count = a2560_run_calibration(calibration_time);
 	
     /* Restore everything */
-    R32(INT_TIMER0_VECN) = old_timer_vector;
+    R32(INT_TIMER0_VECN*4) = old_timer_vector;
     a2560_irq_restore(masks);
 
 	if (loop_count == -1) {

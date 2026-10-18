@@ -142,6 +142,24 @@ void vecs_init(void)
     : "g"(&os_header) /* inputs */
     : "a0", "a1", "cc" AND_MEMORY
     );
+#if defined(MACHINE_A2560M)
+#if CONF_WITH_A2560_NULL_TRAP
+    /* Diagnostic for invalid control flow: the copied OS header normally
+     * branches into vector data when called through a NULL function pointer.
+     * Trap before that data executes and destroys the caller's registers.
+     * Keep the version word and reset PC intact.  This changes only the RAM
+     * copy, not the boot image's header.
+     */
+    __asm__ volatile
+    (
+        "suba.l a0,a0\n\t"
+        "move.w #0x4afc,(a0)"      /* ILLEGAL */
+    :
+    :
+    : "a0", "cc" AND_MEMORY
+    );
+#endif
+#endif
 #endif
 
     /* Initialize the exception vectors.
@@ -1312,7 +1330,11 @@ static LONG bios_b(WORD flag)
 
 #if DBGBIOS
 static LONG bios_c(void) { return (LONG)bmem_gettpa(); }
+#if defined(MACHINE_A2560M)
+static LONG bios_d(ULONG size, BOOL fromTop)
+#else
 static LONG bios_d(BOOL fromTop, ULONG size)
+#endif
 {
 	KDEBUG(("BIOS 13: Balloc(0x%08lx,%s)\n",size,fromTop ? "fromTop" : "fromBottom"));
 	return (LONG)balloc_stram(size,fromTop);

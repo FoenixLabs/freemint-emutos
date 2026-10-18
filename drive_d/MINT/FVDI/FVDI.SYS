@@ -1,0 +1,13 @@
+# A2560Me GUI engine: big-endian RGB565, 1280x960 (or 1024-line timing).
+PATH = D:\MINT\FVDI
+width -96
+height -96
+# Starting before AES: do not copy old monochrome workstation state.
+booted
+singlebend
+lineafix
+xbiosfix
+# No nomemlink: this fVDI is installed after FreeMiNT has started.
+01r a2560me.sys
+# Optional half-resolution RGB565 (640x480/512): add 'half' above.
+# ROM bitmap fonts are used; FreeType/GDOS fonts are not required.

@@ -247,7 +247,13 @@ void gr_dragbox(WORD w, WORD h, WORD sx, WORD sy, GRECT *pc,
     BOOL    down;
     GRECT   o;
 
+#if defined(MACHINE_A2560M)
+    kprintf("A2560Me drag: begin x=%d y=%d w=%d h=%d\n",sx,sy,w,h);
+#endif
     wm_update(BEG_UPDATE);
+#if defined(MACHINE_A2560M)
+    kprintf("A2560Me drag: update lock acquired\n");
+#endif
     gr_setup(BLACK);
 
     gr_clamp(sx+1, sy+1, 0, 0, &offx, &offy);
@@ -262,9 +268,15 @@ void gr_dragbox(WORD w, WORD h, WORD sx, WORD sy, GRECT *pc,
         down = gr_wait(&o, &gl_rzero);
     } while (down);
 
+#if defined(MACHINE_A2560M)
+    kprintf("A2560Me drag: released x=%d y=%d\n",o.g_x,o.g_y);
+#endif
     *pdx = o.g_x;
     *pdy = o.g_y;
     wm_update(END_UPDATE);
+#if defined(MACHINE_A2560M)
+    kprintf("A2560Me drag: update lock released\n");
+#endif
 }
 
 

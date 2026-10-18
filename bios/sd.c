@@ -188,7 +188,11 @@ LONG ret;
 UBYTE *p = buf;
 int i;
 SPI_DRIVER *spi_driver;
-struct cardinfo *card = &cards[dev];
+struct cardinfo *card;
+
+    if ((dev < 0) || (dev >= MAX_SD_CARDS))
+        return EUNDEV;
+    card = &cards[dev];
 
     spi_driver = card->spi_driver;
     if (spi_driver == NULL)
@@ -242,6 +246,10 @@ struct cardinfo *card = &cards[dev];
 
     spi_driver->led_off();
 
+#if defined(MACHINE_A2560M)
+    KDEBUG(("sd_rw complete: rw=%d sector=%ld count=%d buf=%p dev=%d rc=%ld\n",
+            rw,sector,count,buf,dev,ret));
+#endif
     return ret;
 }
 
@@ -258,10 +266,13 @@ SPI_DRIVER *spi_driver;
 
     KDEBUG(("sd_ioctl(%d,%d)\n",drv,ctrl));
 
+    if (drv >= ARRAY_SIZE(cards))
+        return EUNDEV;
+
     card = &cards[drv];
     spi_driver = card->spi_driver;
 
-    if (spi_driver == NULL || drv >= ARRAY_SIZE(cards)) {
+    if (spi_driver == NULL) {
         KDEBUG(("Invalid device %d (driver:%p)\n", drv, spi_driver));
         return EUNDEV;
     }
@@ -400,13 +411,15 @@ SPI_DRIVER *spi_driver;
     /*
      *  force block length to SECTOR_SIZE if byte addressing
      */
-    if (card->type != CARDTYPE_UNKNOWN)
-        if (!(card->features&BLOCK_ADDRESSING))
+    if (card->type != CARDTYPE_UNKNOWN) {
+        if (!(card->features&BLOCK_ADDRESSING)) {
             KDEBUG(("CMD16: set block length to %ld bytes\n", SECTOR_SIZE));
             if (sd_command(CMD16,SECTOR_SIZE,0,R1,response,spi_driver) != 0) {
                 KDEBUG(("CMD16 problem"));
                 card->type = CARDTYPE_UNKNOWN;
             }
+        }
+    }
 
     spi_driver->cs_unassert();
 
@@ -450,7 +463,7 @@ SPI_DRIVER *spi_driver = card->spi_driver;
         incr = SECTOR_SIZE;
     }
 
-    KDEBUG(("sd_read(%ld,%d) => sd_read(%ld,%d)\n",sector,count,posn,count));
+    KDEBUG(("sd_read(%ld,%d) => sd_read(%ld,%d) buf=%p\n",sector,count,posn,count,buf));
 
     rc = 0L;
 
@@ -585,8 +598,18 @@ static int sd_command(UBYTE cmd,ULONG argument,UBYTE crc,UBYTE resp_type,UBYTE *
      *  2. it cleans up any residual data that the card may be sending as
      *     a result of a previous command that experienced problems.
      */
-    if (sd_wait_for_ready(SD_READ_TIMEOUT_TICKS,spi_driver) < 0)
-        return -1;
+    /* CMD12 must interrupt an active read stream without waiting for idle. */
+    if (cmd != CMD12) {
+#if defined(MACHINE_A2560M)
+        /* Match MCP's command framing on the A2560Me SPI controllers. */
+        spi_driver->cs_unassert();
+        spi_driver->cs_assert();
+#endif
+        if (sd_wait_for_ready(SD_READ_TIMEOUT_TICKS,spi_driver) < 0) {
+            KDEBUG(("CMD%d: card ready timeout\n",cmd));
+            return -1;
+        }
+    }
 
     /* Send the command byte, argument, crc */
     spi_driver->send_byte((cmd & 0x3f) | 0x40);
@@ -609,8 +632,10 @@ static int sd_command(UBYTE cmd,ULONG argument,UBYTE crc,UBYTE resp_type,UBYTE *
         if ((resp[0]&0x80) == 0)
             break;
     }
-    if (i >= SD_CMD_TIMEOUT)            /* timed out */
+    if (i >= SD_CMD_TIMEOUT) {          /* timed out */
+        KDEBUG(("CMD%d: response timeout (0x%02x)\n",cmd,resp[0]));
         return -1;
+    }
 
     /*
      *  retrieve remainder of response iff command is legal
@@ -647,7 +672,7 @@ static int sd_command(UBYTE cmd,ULONG argument,UBYTE crc,UBYTE resp_type,UBYTE *
 static int sd_receive_data(UBYTE *buf,UWORD len,UWORD special, const SPI_DRIVER *spi_driver)
 {
 LONG i;
-UBYTE token;
+UBYTE token = 0xff;
 
     //KDEBUG(("sd_receive_data len:%d\n", len));
     /* wait for the token */
@@ -870,7 +895,7 @@ ULONG c_size;
         c_size = csd[7] & 0x3f;
         c_size = (c_size << 8) + csd[8];
         c_size = (c_size << 8) + csd[9];
-        return c_size * SDV2_CSIZE_MULTIPLIER;
+        return (c_size+1) * SDV2_CSIZE_MULTIPLIER;
     }
 
     read_bl_len = csd[5] & 0x0f;

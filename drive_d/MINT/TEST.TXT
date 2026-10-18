@@ -1,0 +1,3 @@
+A2560Me FreeMiNT FAT32 test file.
+Copy this file to ROUNDTRP.TXT using the built-in shell, reboot cleanly,
+and check that ROUNDTRP.TXT is still present and matches this file.

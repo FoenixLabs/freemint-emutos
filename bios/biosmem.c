@@ -70,6 +70,15 @@ void bmem_init(void)
     /* End of available ST-RAM */
     /* The screen buffer will be allocated later */
     memtop = phystop;
+#if defined(MACHINE_A2560M)
+    /* The development ROM is linked into SRAM.  Keep its text/data out
+     * of the GEMDOS pool even though it uses the ROM linker layout. */
+    if (((ULONG)_text >= (ULONG)membot) && ((ULONG)_text < (ULONG)memtop))
+    {
+        membot = (UBYTE *)(((ULONG)_edata + 3UL) & ~3UL);
+        end_os = membot;
+    }
+#endif
     KDEBUG(("       memtop = %p\n", memtop));
 
 #if CONF_WITH_STATIC_ALT_RAM

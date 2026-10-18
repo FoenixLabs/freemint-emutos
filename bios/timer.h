@@ -27,6 +27,9 @@
 
 /* Non-Atari hardware vectors */
 #if !CONF_WITH_MFP
+#ifdef MACHINE_A2560M
+void a2560_int_5ms(void);
+#endif
 extern void (*vector_5ms)(void);              /* 200 Hz system timer */
 #endif
 

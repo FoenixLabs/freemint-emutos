@@ -1,0 +1,9 @@
+# Readable by EmuTOS before FreeMiNT brings up FAT32.
+# Keep C: on EmuTOS GEMDOS; its FAT16 cluster count exceeds the native
+# FreeMiNT FAT driver limit. Leave disk write-back disabled.
+FS_CACHE_SIZE=128
+FS_NEWFATFS=D
+FS_VFAT=D
+echo A2560Me: loading configuration from D:/MINT/MINT.CNF
+include d:/mint/mint.cnf
+# No INIT or GEM: use the kernel's built-in shell for first validation.

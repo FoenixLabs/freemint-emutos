@@ -53,6 +53,9 @@ static bool init(struct ps2_driver_api_t *api)
 {
     a2560_debugnl("ps2_mouse_a2560->init()");
 
+#if defined(MACHINE_A2560M)
+    DRIVER_DATA->state = SM_IDLE;
+#endif
     vicky_mouse_init(on_change, api);
 
     return SUCCESS;
@@ -101,6 +104,12 @@ void process(struct ps2_driver_api_t *api, uint8_t byte)
     /* Receive a byte from the PS/2 port and store it in the packet. */
     uint8_t *packet = DRIVER_DATA->packet;
     uint8_t *state = &(DRIVER_DATA->state);
+#if defined(MACHINE_A2560M)
+    /* Match MCP's packet framing check.  A stray byte must not become
+     * a button byte and leave the desktop waiting for a false press. */
+    if ((*state == SM_IDLE) && !(byte & 0x08))
+        return;
+#endif
     packet[(*state)++] = byte;
     
     /* Packet complete */

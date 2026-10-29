@@ -21,7 +21,7 @@ static uint16_t wm8776_regs[23];
 static volatile uint16_t * const wm8776 = (uint16_t*)WM8776_PORT;
 
 /* Initialisation data for the WM8776 CODEC */
-static uint16_t wm8776_init_data[] = {
+static const uint16_t wm8776_init_data[] = {
     /* Master reset */
     WM8776_R23_RESET,
     /* Power options */
@@ -51,6 +51,8 @@ void wm8776_init(void)
     {
         wm8776_send(wm8776_init_data[i]);
     }
+
+    wm8776_set_digital_volume(0xff);
 }
 
 
@@ -77,14 +79,17 @@ void wm8776_send(uint16_t data)
 
 void wm8776_set_digital_volume(uint8_t volume)
 {
-    wm8776_send(WM8776_R05_DAC_VOLUME_ALL | (0xFF - (volume & MASTDA_MASK)));
+    /* Both attenuation controls need UPDATE to apply their pre-latched value.
+     * R5: 0xff is 0 dB, 0 is mute. R2: 0x79 is 0 dB, <=0x2f is mute.
+     * Match MCP 157's 0=mute, 255=full volume convention. */
+    uint16_t hp = 0x2f + ((uint16_t)volume * (0x79 - 0x2f)) / 255;
 
-    /* Is this really correct ? above 0x79 we'll be amplifying */
-    wm8776_send(WM8776_R02_HEADPHONE_ATTENUATION_ALL | ((volume >> 1) & HPRMASTA_MASK));
+    wm8776_send(WM8776_R05_DAC_VOLUME_ALL | MASTDA_LATCHED | volume);
+    wm8776_send(WM8776_R02_HEADPHONE_ATTENUATION_ALL | UPDATEA_ENABLED | hp);
 }
 
 
 uint8_t wm8776_get_digital_volume(void)
 {
-    return 255- (wm8776_regs[5/*WM8776_R05_DAC_VOLUME_ALL*/] && MASTDA_MASK);
+    return wm8776_regs[5] & MASTDA_MASK;
 }
